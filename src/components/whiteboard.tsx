@@ -10,9 +10,9 @@ const Tool = {
 function Board() {
   const [drawingMode, setDrawingMode] = useState(false);
   const [context, setContext] = useState<CanvasRenderingContext2D | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [color, setColor] = useState<string>("#000000");
-  const [lineWidth, setLineWidth] = useState<number>(2);
+  const [size, setSize] = useState<number>(2);
   const [text, setText] = useState<string>("");
   const [currentTool, setCurrentTool] = useState<string>(Tool.PEN);
   const [drawingHistory, setDrawingHistory] = useState<ImageData[]>([]);
@@ -40,7 +40,7 @@ function Board() {
 
     context.lineTo(offsetX, offsetY);
     context.lineCap = "round";
-    context.lineWidth = lineWidth;
+    context.lineWidth = size;
     context.strokeStyle = color;
 
     if (currentTool === Tool.PEN) {
@@ -68,17 +68,15 @@ function Board() {
   }
 
   function addTextToCanvas(event: React.MouseEvent<HTMLCanvasElement>) {
-    if (!context || !canvasRef.current) return;
-    if (!text) return;
+    if (!context || !canvasRef.current || !text) return;
 
     if (currentTool === Tool.TEXT) {
-      const { top, left } = canvasRef.current.getBoundingClientRect();
+      const { nativeEvent: { offsetX, offsetY } } = event;
 
-      context.font = `${lineWidth}px Arial`;
+      context.font = `${size}px Arial`;
 
       context.fillStyle = color;
-      context.fillText(text, event.clientX - left, event.clientY - top);
-
+      context.fillText(text, offsetX, offsetY);
       context.globalCompositeOperation = "source-over";
     }
   }
@@ -104,9 +102,8 @@ function Board() {
   }, []);
 
   return (
-    <div className="flex flex-col justify-center items-center absolute top-0 bottom-0 left-0 right-0 bg-gradient-to-l from-cyan-40  to-slate-300">
-      <h1 className="text-2xl mt-[2rem]">
-        Draw here:{" "}
+    <div className="flex flex-col justify-center items-center">
+      <h1 className="text-2xl">
         <span className="bg-clip-text text-transparent font-extrabold bg-gradient-to-r from-orange-500 to-orange-300">
           WhiteBoard
         </span>
@@ -131,10 +128,10 @@ function Board() {
       <label className="font-semibold">Tool width:</label>
       <input
         type="range"
-        value={lineWidth}
+        value={size}
         onChange={(e) => {
           e.persist();
-          setLineWidth(+e.target.value);
+          setSize(+e.target.value);
         }}
         min={1}
         max={25}
